@@ -70,16 +70,16 @@ void main(void)
     BCSCTL1 = CALBC1_1MHZ;
     DCOCTL = CALDCO_1MHZ;
 
-    P1OUT = 0x00;                           // Initialize all GPIO
+    P1OUT = 0x00;                     // Initialize all GPIO
     P1SEL = UART_TXD + UART_RXD;            // Timer function for TXD/RXD pins
-    P1DIR = 0xFF & ~UART_RXD;               // Set all pins but RXD to output
+    P1DIR = 0xEF & ~UART_RXD;               // Set all pins but RXD to output
     P2OUT = 0x00;
     P2SEL = 0x00;
     P2DIR = 0xFF;
 
     __enable_interrupt();
     
-    TimerA_UART_init();                     // Start Timer_A UART
+    TimerA_UART_init();                     // St art Timer_A UART
     TimerA_UART_print("G2xx1 TimerA UART\r\n");
     TimerA_UART_print("READY.\r\n");
     
@@ -89,14 +89,16 @@ void main(void)
         __bis_SR_register(LPM0_bits);
         
         // Update board outputs according to received byte
-        if (rxBuffer & 0x01) P1OUT |= 0x01; else P1OUT &= ~0x01;    // P1.0
-        if (rxBuffer & 0x02) P1OUT |= 0x08; else P1OUT &= ~0x08;    // P1.3
-        if (rxBuffer & 0x04) P1OUT |= 0x10; else P1OUT &= ~0x10;    // P1.4
-        if (rxBuffer & 0x08) P1OUT |= 0x20; else P1OUT &= ~0x20;    // P1.5
-        if (rxBuffer & 0x10) P1OUT |= 0x40; else P1OUT &= ~0x40;    // P1.6
-        if (rxBuffer & 0x20) P1OUT |= 0x80; else P1OUT &= ~0x80;    // P1.7
-        if (rxBuffer & 0x40) P2OUT |= 0x40; else P2OUT &= ~0x40;    // P2.6
-        if (rxBuffer & 0x80) P2OUT |= 0x80; else P2OUT &= ~0x80;    // P2.7
+        if (P1IN & 0x10) { //дверь закрыта (оптопара перекрыта), горит красный диод, зелёный не горит
+            P1OUT |= 0x01;
+            P1OUT &= ~0x40;
+            rxBuffer = 255;
+        }
+        else {//дверь открыта, красный диод не горит, зелёный горит
+            P1OUT &= ~0x01;
+            P1OUT |= 0x40;
+            rxBuffer = 254;
+        }
         
         // Echo received character
         TimerA_UART_tx(rxBuffer);
